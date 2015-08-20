@@ -2,17 +2,18 @@ package kr.co.bitnine.octopus.mockup;
 
 import org.junit.Test;
 
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class MockupTest
 {
     @Test
     public void test() throws Exception
     {
-        DatabaseMetaData meta = OctopusMockups.getMetaData();
+        Class.forName("kr.co.bitnine.octopus.mockup.Driver");
+
+        Connection conn = DriverManager.getConnection("jdbc:octopus-mockup:");
+
+        DatabaseMetaData meta = conn.getMetaData();
 
         /*
          * Getting Datasource list
@@ -88,7 +89,7 @@ public class MockupTest
         }
         rs.close();
 
-        Statement stmt = OctopusMockups.createStatement();
+        Statement stmt = conn.createStatement();
 
         /*
          * Create user
@@ -139,5 +140,7 @@ public class MockupTest
         }
 
         stmt.close();
+
+        conn.close();
     }
 }
