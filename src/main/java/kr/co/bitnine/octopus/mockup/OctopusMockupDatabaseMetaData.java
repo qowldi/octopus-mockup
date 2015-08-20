@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-class OctopusMockupDatabaseMetaData extends AbstractDatabaseMetaData
+public class OctopusMockupDatabaseMetaData extends AbstractDatabaseMetaData
 {
     private List<Datasource> metaInfo;
     private List<User> userInfo;
@@ -12,31 +12,15 @@ class OctopusMockupDatabaseMetaData extends AbstractDatabaseMetaData
 
     private OctopusMockupDatabaseMetaData()
     {
-        metaInfo = Arrays.asList(
-                new Datasource("datasource1", "Oracle 1", Arrays.asList(
-                        new Schema("schema1", "Schema 1", Arrays.asList(
-                                new Table("table1", "TABLE", "Table 1", Arrays.asList(
-                                        new Column("column1", "VARCHAR(64)", "Confidential", "Column 1"),
-                                        new Column("column2", "VARCHAR(64)", "Public", "Column 2"),
-                                        new Column("column3", "VARCHAR(64)", "Private", "Column 3")
-                                ))
-                        ))
-                )),
-                new Datasource("datasource2", "Oracle 2", Arrays.asList(
-                        new Schema("schema2", "Schema 2", Arrays.asList(
-                                new Table("table2", "TABLE", "Table 2", Arrays.asList(
-                                        new Column("column1", "VARCHAR(64)", "Confidential", "Column 1"),
-                                        new Column("column2", "VARCHAR(64)", "Public", "Column 2"),
-                                        new Column("column3", "VARCHAR(64)", "Private", "Column 3")
-                                ))
-                        ))
-                ))
-        );
-
         userInfo = new ArrayList<>();
         userInfo.add(new User("octopus", "bitnine"));
 
         grantInfo = new ArrayList<>();
+    }
+
+    public void setMetaInfo(List<Datasource> metaInfo)
+    {
+        this.metaInfo = metaInfo;
     }
 
     private static OctopusMockupDatabaseMetaData instance = null;
@@ -51,66 +35,6 @@ class OctopusMockupDatabaseMetaData extends AbstractDatabaseMetaData
         }
 
         return instance;
-    }
-
-    private static class Datasource
-    {
-        String datasourceName;
-        String comment;
-        List<Schema> schemas;
-
-        Datasource(String datasourceName, String comment, List<Schema> schemas)
-        {
-            this.datasourceName = datasourceName;
-            this.comment = comment;
-            this.schemas = schemas;
-        }
-    }
-
-    private static class Schema
-    {
-        String schemaName;
-        String comment;
-        List<Table> tables;
-
-        Schema(String schemaName, String comment, List<Table> tables)
-        {
-            this.schemaName = schemaName;
-            this.comment = comment;
-            this.tables = tables;
-        }
-    }
-
-    private static class Table
-    {
-        String tableName;
-        String type;
-        String comment;
-        List<Column> columns;
-
-        Table(String tableName, String type, String comment, List<Column> columns)
-        {
-            this.tableName = tableName;
-            this.type = type;
-            this.comment = comment;
-            this.columns = columns;
-        }
-    }
-
-    private static class Column
-    {
-        String columnName;
-        String type;
-        String secuType;
-        String comment;
-
-        Column(String columnName, String type, String secuType, String comment)
-        {
-            this.columnName = columnName;
-            this.type = type;
-            this.secuType = secuType;
-            this.comment = comment;
-        }
     }
 
     private class User
@@ -496,5 +420,13 @@ class OctopusMockupDatabaseMetaData extends AbstractDatabaseMetaData
 
             return result.toString();
         }
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> clazz) throws SQLException
+    {
+        if (clazz.isInstance(this))
+            return clazz.cast(this);
+        throw new ClassCastException("not a " + clazz);
     }
 }

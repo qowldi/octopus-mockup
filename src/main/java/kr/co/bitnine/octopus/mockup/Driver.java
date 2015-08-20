@@ -71,4 +71,3 @@ public class Driver implements java.sql.Driver
         throw new SQLFeatureNotSupportedException();
     }
 }
-

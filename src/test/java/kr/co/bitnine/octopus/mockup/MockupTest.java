@@ -3,6 +3,8 @@ package kr.co.bitnine.octopus.mockup;
 import org.junit.Test;
 
 import java.sql.*;
+import java.util.Arrays;
+import java.util.List;
 
 public class MockupTest
 {
@@ -14,6 +16,32 @@ public class MockupTest
         Connection conn = DriverManager.getConnection("jdbc:octopus-mockup:");
 
         DatabaseMetaData meta = conn.getMetaData();
+
+        /*
+         * Add meta data
+         */
+        OctopusMockupDatabaseMetaData octopusMeta = meta.unwrap(OctopusMockupDatabaseMetaData.class);
+        List<Datasource> metaInfo = Arrays.asList(
+                new Datasource("datasource1", "Oracle 1", Arrays.asList(
+                        new Schema("schema1", "Schema 1", Arrays.asList(
+                                new Table("table1", "TABLE", "Table 1", Arrays.asList(
+                                        new Column("column1", "VARCHAR(64)", "Confidential", "Column 1"),
+                                        new Column("column2", "VARCHAR(64)", "Public", "Column 2"),
+                                        new Column("column3", "VARCHAR(64)", "Private", "Column 3")
+                                ))
+                        ))
+                )),
+                new Datasource("datasource2", "Oracle 2", Arrays.asList(
+                        new Schema("schema2", "Schema 2", Arrays.asList(
+                                new Table("table2", "TABLE", "Table 2", Arrays.asList(
+                                        new Column("column1", "VARCHAR(64)", "Confidential", "Column 1"),
+                                        new Column("column2", "VARCHAR(64)", "Public", "Column 2"),
+                                        new Column("column3", "VARCHAR(64)", "Private", "Column 3")
+                                ))
+                        ))
+                ))
+        );
+        octopusMeta.setMetaInfo(metaInfo);
 
         /*
          * Getting Datasource list
@@ -116,7 +144,7 @@ public class MockupTest
         }
 
         /*
-         * List som privileges
+         * List some privileges
          */
         System.out.println("* List some privileges");
         rs = meta.getTablePrivileges("datasource1", null, null);
