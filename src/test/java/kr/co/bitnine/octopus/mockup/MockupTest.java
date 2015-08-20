@@ -2,150 +2,125 @@ package kr.co.bitnine.octopus.mockup;
 
 import org.junit.Test;
 
-import java.util.Scanner;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class MockupTest
 {
     @Test
     public void test() throws Exception
     {
-/*
-            Class.forName("kr.co.bitnine.octopus.mockup.Driver");
-            String url = "jdbc:octopus-mockup://localhost/db";
+        DatabaseMetaData meta = OctopusMockups.getMetaData();
 
-             The genuine driver name will be 'ko.co.bitnine.octopus.Driver'
-               and the connection url will be 'jdbc:octopus://...'
+        /*
+         * Getting Datasource list
+         *      The result set consists of
+         *          1. Datasource name
+         *          2. Description of the datasource
+         */
+        System.out.println("* Datasource list");
+        ResultSet rs = meta.getCatalogs();
+        while (rs.next())
+            System.out.println("datasource=" + rs.getString(1) + ", desc=" + rs.getString(2));
+        rs.close();
 
+        /*
+         * Getting Schema list
+         *      The result set consists of
+         *          1. Schema name
+         *          2. Datasource name
+         *          3. Description of the datasource
+         *
+         * You can also call getSchema(String catalog, String schemaPattern)
+         */
+        System.out.println("* Schema list");
+        rs = meta.getSchemas();
+        while (rs.next()) {
+            System.out.println("schema=" + rs.getString(1) + ", datasource=" + rs.getString(2) +
+                    ", desc=" + rs.getString(3));
+        }
+        rs.close();
 
-            Properties info = new Properties();
-            info.setProperty("user", "octopus");
-            info.setProperty("password", "bitnine");
+        /* Getting Table list
+         *      The result set consists of
+         *          1. Datasource name
+         *          2. Schema name
+         *          3. Table name
+         *          4. Table type (TABLE or VIEW)
+         *          5. Description of the table
+         *
+         * You can restrict the result set with catalog name, schema pattern or
+         * table name pattern.
+         * Please refer to the JDBC specification.
+         */
+        System.out.println("* Table list");
+        rs = meta.getTables("datasource1", null, null, null);
+        while (rs.next()) {
+            System.out.println("datasource=" + rs.getString(1) + ", schema=" + rs.getString(2) +
+                    ", table=" + rs.getString(3) + ", type=" + rs.getString(4) +
+                    ", desc=" + rs.getString(5));
+        }
+        rs.close();
 
+        /* Getting Column list
+         *      The result set consists of
+         *          1. Datasource name
+         *          2. Schema name
+         *          3. Table name
+         *          4. Column name
+         *          5. Column type
+         *          6. Column security type (this name and contents will be modified later)
+         *          7. Description of the column
+         *
+         * You can restrict the result set with catalog name, schema pattern,
+         * table name pattern or column name pattern.
+         * Please refer to the JDBC specification.
+         */
+        System.out.println("* Column list");
+        rs = meta.getColumns("datasource1", null, null, null);
+        while (rs.next()) {
+            System.out.println("datasource:" + rs.getString(1) + ", schema=" + rs.getString(2) +
+                    ", table=" + rs.getString(3) + ", column=" + rs.getString(4) +
+                    ", type=" + rs.getString(5) + ", securityType=" + rs.getString(6) +
+                    ", desc=" + rs.getString(7));
+        }
+        rs.close();
 
-             Connect to Octopus
-               (this mockup driver does nothing for connection)
+        Statement stmt = OctopusMockups.createStatement();
 
-
-            Connection conn = DriverManager.getConnection(url, info);
-*/
-            /* Getting OctopusMockupDatabaseMetaData class
-            *OctopusMockupDatabaseMetaData dbmd = conn.getMetaData();
-            */
-        OctopusMockupDatabaseMetaData dbmd = new OctopusMockupDatabaseMetaData();
-            /* 1. Getting Datasource list
-                  The result set consists of
-                      1. Datasource name
-                      2. Description of the datasource
-             */
-        System.out.println("== Datasource List ==");
-        OctopusMockupResultSet datasources = dbmd.getCatalogs();
-        while (datasources.next()) {
-            System.out.println("Datasource:" + datasources.getString(1) + " Description:" + datasources.getString(2));
+        /*
+         * Create user
+         */
+        System.out.println("* CREATE USER");
+        String sql = "CREATE USER jsyang IDENTIFIED BY '0009';";
+        try {
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
-            /* 2. Getting Schema list
-                  The result set consists of
-                      1. Datasource name
-                      2. Schema name
-                      2. Description of the datasource
-             */
-        System.out.println("== Schema List ==");
-        OctopusMockupResultSet schemas = dbmd.getSchemas();
-            /* You can also call the method getSchema(String catalog, String schemaPattern) */
-        while (schemas.next()) {
-            System.out.println("Datasource:" + schemas.getString(1) + " Schema:" + schemas.getString(2) +
-                    " Description:" + schemas.getString(3));
+        /*
+         * Grant
+         */
+        System.out.println("* GRANT");
+        sql = "GRANT SELECT ON \"datasource1.schema1.table1\" TO jsyang;";
+        try {
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
-            /* 3. Getting Table list
-                  The result set consists of
-                      1. Datasource name
-                      2. Schema name
-                      3. Table name
-                      4. Table type (TABLE or VIEW)
-                      5. Description of the table
-             */
-        System.out.println("== Table List ==");
-        OctopusMockupResultSet tables = dbmd.getTables(null, null, null, null);
-            /* You can restrict the catalog name or schema pattern, table name pattern.
-               Please refer to the JDBC specification (OctopusMockupDatabaseMetaData class) */
-        while (tables.next()) {
-            System.out.println("Datasource:" + tables.getString(1) + " Schema:" + tables.getString(2) +
-                            " Table:" + tables.getString(3) + " Type:" + tables.getString(4)
-            );// + " Description:" + tables.getString(5));
-        }
-
-            /* 4. Getting Column list
-                  The result set consists of
-                      1. Datasource name
-                      2. Schema name
-                      3. Table name
-                      4. Column name
-                      5. Column type
-                      6. Column security type (this name and contents will be modified later)
-                      7. Description of the column
-             */
-        System.out.println("== Column List ==");
-        OctopusMockupResultSet columns = dbmd.getColumns(null, null, null, null);
-        while (columns.next()) {
-            System.out.println("Datasource:" + columns.getString(1) + " Schema:" + columns.getString(2) +
-                    " Table:" + columns.getString(3) + " Column:" + columns.getString(4) +
-                    " Type:" + columns.getString(5) + " Security Type:" + columns.getString(6) + " Description:" + columns.getString(5));
-        }
-
-
-            /* 5. Create user
-
-             */
-        System.out.println("== CREATE USER ==");
-        System.out.println("DDL : CREATE USER octopus PASSWORD octopus");
-        String createUserStmt = "CREATE USER octopus PASSWORD octopus";
-        OctopusMockupResultSet addUsers1 = dbmd.createUser(createUserStmt);
-
-        System.out.println("== User List ==");
-        OctopusMockupResultSet users = dbmd.getUsers();
-        while(users.next()){
-            System.out.println("User name :" + users.getString(1));
-        }
-
-            /* 6. Grant
-
-             */
-        System.out.println("== GRANT  ==");
-        String grantStmt1 = "GRANT SELECT ON datasource.schema.table TO user1";
-    //  String grantStmt2 = "GRANT SELECT ON schema TO octopus";
-    //  String grantStmt3 = "GRANT SELECT ON table TO octopus";
-    //  String grantStmt4 = "GRANT ROLE TO octopus";
-
-        dbmd.grantStmt(grantStmt1);
-        OctopusMockupResultSet grant = dbmd.getGrant();
-        while (grant.next()) {
-            System.out.println("1. grantee : " + grant.getString(1) + " 2. grantor : " + grant.getString(2) + " 3. privilege : " + grant.getString(3)
-            + " 4. table name : " + grant.getString(6));
-        }
-
-            /* 7. REVOKE
-
-             */
-        System.out.println("==  REVOKE  ==");
-        String revokeStmt1 = "REVOKE SELECT FROM octopus";
-     // String revokeStmt2 = "REVOKE SELECT ON datasource FROM octopus";
-
-        OctopusMockupResultSet revoke = dbmd.revokeStmt(revokeStmt1);
-        while(revoke.next()){
-            System.out.println("Revoke Username : " + revoke.getString(1) + " Revoke obj : " + revoke.getString(2)
-                    + " Revoke auth : " + revoke.getString(3));
-        }
-
-            /* 8. List of authority
-
-            */
-        System.out.println("== List of authority ==");
-        OctopusMockupResultSet authList = dbmd.getGrant();
-
-        while (authList.next()) {
-            System.out.println("1. grantee : " + authList.getString(1) + " 2. grantor = " + authList.getString(2) +" 3. privilege : " + authList.getString(3) + " 4. datasource : " + authList.getString(4)
-                    + " 5. schema : " + authList.getString(5) + " 6. table name : " + authList.getString(6));
+        /*
+         * Revoke
+         */
+        System.out.println("* REVOKE");
+        sql = "REVOKE SELECT ON \"datasource1.schema1.table1\" FROM jsyang";
+        try {
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }

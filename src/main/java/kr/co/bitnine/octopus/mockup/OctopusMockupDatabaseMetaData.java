@@ -1,448 +1,496 @@
 package kr.co.bitnine.octopus.mockup;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
-public class OctopusMockupDatabaseMetaData {
+class OctopusMockupDatabaseMetaData extends AbstractDatabaseMetaData
+{
+    private List<Datasource> metaInfo;
+    private List<User> userInfo;
+    private List<Grant> grantInfo;
 
-    private static final char SEARCH_STRING_ESCAPE = '\\';
-    static List<Datasource> meta_info;
-    static List<User> user_info;
-    static List<Grant> grant_info;
-
-    public OctopusMockupDatabaseMetaData(){
-        meta_info = Arrays.asList(
-                new Datasource("Datasourc 1", "Oracle 1", Arrays.asList(
-                        new Schema("Schema 1", "schema 1", Arrays.asList(
-                                new Table("Table 1", "Table", "table 1", Arrays.asList(
-                                        new Column("Column 1", "VARCHAR(200)", "Confidential", "column 1"),
-                                        new Column("Column 2", "VARCHAR(200)", "Public", "column 2"),
-                                        new Column("Column 3", "VARCHAR(200)", "Private", "column 3")
+    private OctopusMockupDatabaseMetaData()
+    {
+        metaInfo = Arrays.asList(
+                new Datasource("datasource1", "Oracle 1", Arrays.asList(
+                        new Schema("schema1", "Schema 1", Arrays.asList(
+                                new Table("table1", "TABLE", "Table 1", Arrays.asList(
+                                        new Column("column1", "VARCHAR(64)", "Confidential", "Column 1"),
+                                        new Column("column2", "VARCHAR(64)", "Public", "Column 2"),
+                                        new Column("column3", "VARCHAR(64)", "Private", "Column 3")
                                 ))
                         ))
                 )),
-        new Datasource("Datasource 2", "Oracle 2", Arrays.asList(
-                new Schema("Schema 2", "schema 2", Arrays.asList(
-                        new Table("Table 2", "Table", "table 2", Arrays.asList(
-                                new Column("Column 1", "VARCHAR(200)", "Confidential", "column 1"),
-                                new Column("Column 2", "VARCHAR(200)", "Public", "column 2"),
-                                new Column("Column 3", "VARCHAR(200)", "Private", "column 3")
+                new Datasource("datasource2", "Oracle 2", Arrays.asList(
+                        new Schema("schema2", "Schema 2", Arrays.asList(
+                                new Table("table2", "TABLE", "Table 2", Arrays.asList(
+                                        new Column("column1", "VARCHAR(64)", "Confidential", "Column 1"),
+                                        new Column("column2", "VARCHAR(64)", "Public", "Column 2"),
+                                        new Column("column3", "VARCHAR(64)", "Private", "Column 3")
+                                ))
                         ))
                 ))
-            ))
         );
+
+        userInfo = new ArrayList<>();
+        userInfo.add(new User("octopus", "bitnine"));
+
+        grantInfo = new ArrayList<>();
     }
 
-    class Datasource {
-        String datasource_name;
-        String comment;
-        public List<Schema> schemas;
+    private static OctopusMockupDatabaseMetaData instance = null;
 
-        public Datasource (String datasource_name, String comment, List<Schema> schemas){
-            this.datasource_name = datasource_name;
+    static OctopusMockupDatabaseMetaData getInstance()
+    {
+        if (instance == null) {
+            synchronized (OctopusMockupDatabaseMetaData.class) {
+                if (instance == null)
+                    instance = new OctopusMockupDatabaseMetaData();
+            }
+        }
+
+        return instance;
+    }
+
+    private static class Datasource
+    {
+        String datasourceName;
+        String comment;
+        List<Schema> schemas;
+
+        Datasource(String datasourceName, String comment, List<Schema> schemas)
+        {
+            this.datasourceName = datasourceName;
             this.comment = comment;
             this.schemas = schemas;
         }
     }
 
-    class Schema {
-        String schema_name;
+    private static class Schema
+    {
+        String schemaName;
         String comment;
-        public List<Table> tables;
+        List<Table> tables;
 
-        public Schema(String schema_name, String comment, List<Table> tables){
-            this.schema_name = schema_name;
+        Schema(String schemaName, String comment, List<Table> tables)
+        {
+            this.schemaName = schemaName;
             this.comment = comment;
             this.tables = tables;
         }
     }
 
-    class Table {
-        String table_name;
+    private static class Table
+    {
+        String tableName;
         String type;
         String comment;
-        public List<Column> columns;
+        List<Column> columns;
 
-        public Table ( String table_name, String type, String comment, List<Column> columns) {
-            this.table_name = table_name;
+        Table(String tableName, String type, String comment, List<Column> columns)
+        {
+            this.tableName = tableName;
             this.type = type;
             this.comment = comment;
             this.columns = columns;
         }
     }
 
-    class Column {
-        String column_name;
+    private static class Column
+    {
+        String columnName;
         String type;
-        String secu_type;
-        public String comment;
+        String secuType;
+        String comment;
 
-        public Column (String column_name, String type, String secu_type, String comment) {
-            this.column_name = column_name;
+        Column(String columnName, String type, String secuType, String comment)
+        {
+            this.columnName = columnName;
             this.type = type;
+            this.secuType = secuType;
             this.comment = comment;
-            this.secu_type = secu_type;
         }
     }
 
-    class User {
+    private class User
+    {
         String name;
         String password;
-        private HashMap<String, String> roleMap = new HashMap<String, String>();
 
-        public User ( String name, String password) {
+        User(String name, String password)
+        {
             this.name = name;
             this.password = password;
         }
-
-        public User() {
-            this.name = null;
-            this.password = null;
-        }
-
-        public void setRole(String obj, String role){
-            roleMap.put(obj, role);
-        }
     }
 
-    class Grant {
+    private class Grant
+    {
+        String datasourceName;
+        String schemaName;
+        String tableName;
+        final String grantor = "octopus";
         String grantee;
-        String grantor = "octopus";
         String privilege;
-        String datasource;
-        String schem;
-        String table_name;
 
-        public Grant(String grantor, String privilege){
-            this.grantee = grantor;
+        public Grant(String datasourceName, String schemaName, String tableName, String grantee, String privilege)
+        {
+            this.datasourceName = datasourceName;
+            this.schemaName = schemaName;
+            this.tableName = tableName;
+            this.grantee = grantee;
             this.privilege = privilege;
         }
 
-        public void setDS(String datasource, String schem, String table_name) {
-            this.datasource = datasource;
-            this.schem = schem;
-            this.table_name = table_name;
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (!(obj instanceof Grant))
+                return false;
+
+            Grant g = (Grant) obj;
+
+            if (!datasourceName.equals(g.datasourceName))
+                return false;
+            if (!schemaName.equals(g.schemaName))
+                return false;
+            if (!tableName.equals(g.tableName))
+                return false;
+            if (!grantee.equals(g.grantee))
+                return false;
+            if (!privilege.equals(g.privilege))
+                return false;
+
+            return true;
         }
     }
 
-    class Revoke {
-        String user;
-        String obj;
-        String auth;
+    private User findUserByName(String name)
+    {
+        for (User user : userInfo) {
+            if (user.name.equals(name))
+                return user;
+        }
 
-        public Revoke(String user, String obj, String auth){
-            this.user = user;
-            this.obj = obj;
-            this.auth = auth;
+        return null;
+    }
+
+    boolean createUser(String name, String password)
+    {
+        User e = findUserByName(name);
+        if (e != null)
+            return false;
+
+        User user = new User(name, password);
+        userInfo.add(user);
+        return true;
+    }
+
+    private Grant findGrant(Grant g)
+    {
+        for (Grant tmp : grantInfo) {
+            if (tmp.equals(g))
+                return tmp;
+        }
+
+        return null;
+    }
+
+    boolean grantSelect(String objectName, String grantee)
+    {
+        String[] names = objectName.split("\\.");
+        if (names.length != 3)
+            return false;
+
+        if (findUserByName(grantee) == null)
+            return false;
+
+        Grant g = new Grant(names[0], names[1], names[2], grantee, "SELECT");
+        Grant e = findGrant(g);
+        if (e == null) {
+            grantInfo.add(g);
+            return true;
+        } else {
+            return false;
         }
     }
 
-    public OctopusMockupResultSet getGrant() {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
+    boolean revokeSelect(String objectName, String revokee)
+    {
+        String[] names = objectName.split("\\.");
+        if (names.length != 3)
+            return false;
 
-        for (Grant grant : grant_info) {
-            List<String> tuple = new ArrayList<String>();
+        if (findUserByName(revokee) == null)
+            return false;
 
-            tuple.add(grant.grantee);
-            tuple.add(grant.grantor);
-            tuple.add(grant.privilege);
-            tuple.add(grant.datasource);
-            tuple.add(grant.schem);
-            tuple.add(grant.table_name);
-
-            resultSet.addTuple(tuple);
+        Grant g = new Grant(names[0], names[1], names[2], revokee, "SELECT");
+        Grant e = findGrant(g);
+        if (e == null) {
+            return false;
+        } else {
+            grantInfo.remove(e);
+            return true;
         }
-
-        return resultSet;
     }
 
-    public void grantStmt(String ddl) {
-        String ddlStmt = ddl;
-        List<String> grantDdl = parsingStmd(ddlStmt);
+    @Override
+    public ResultSet getCatalogs() throws SQLException
+    {
+        List<OctopusMockupTuple> ts = new ArrayList<>();
+        for (Datasource ds : metaInfo) {
+            List<String> values = new ArrayList<>();
+            values.add(ds.datasourceName);
+            values.add(ds.comment);
 
-        try {
-            String userName;
-            String authName;
-            if(grantDdl.get(2).toLowerCase().equals("on")) {
-                userName = grantDdl.get(5);
-                authName = grantDdl.get(1);
-
-                String datasource = grantDdl.get(3);
-
-                String[] tokenDatasource = datasource.split("\\.");
-
-                Grant grant = new Grant(userName, authName);
-                grant.setDS(tokenDatasource[0], tokenDatasource[1], tokenDatasource[2]);
-
-                grant_info = Arrays.asList(grant);
+            ts.add(new OctopusMockupTuple(values));
+        }
+        Collections.sort(ts, new Comparator<OctopusMockupTuple>() {
+            @Override
+            public int compare(OctopusMockupTuple tl, OctopusMockupTuple tr)
+            {
+                return tl.get(0).compareTo(tr.get(0));
             }
-            else if(grantDdl.get(2).toLowerCase().equals("to")) {
-                userName = grantDdl.get(3);
-                authName = grantDdl.get(1);
+        });
 
-                Grant grant = new Grant(userName, authName);
-                grant.setDS(null, null, null);
-                grant_info = Arrays.asList(grant);
+        OctopusMockupResultSet rs = new OctopusMockupResultSet();
+        rs.addTuples(ts);
+        return rs;
+    }
+
+    private class SchemaComparator implements Comparator<OctopusMockupTuple>
+    {
+        @Override
+        public int compare(OctopusMockupTuple tl, OctopusMockupTuple tr)
+        {
+            int r = tl.get(1).compareTo(tr.get(1));
+            if (r == 0) {
+                return tl.get(0).compareTo(tr.get(0));
+            } else {
+                return r;
             }
-        }catch (NullPointerException e){
-            e.printStackTrace();
         }
     }
 
-    public OctopusMockupResultSet revokeStmt(String ddl) {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
-        String ddlStmt = ddl;
-        List<String> revokeDdl = parsingStmd(ddlStmt);
+    @Override
+    public ResultSet getSchemas() throws SQLException
+    {
+        List<OctopusMockupTuple> ts = new ArrayList<>();
+        for (Datasource ds : metaInfo){
+            for(Schema schema : ds.schemas) {
+                List<String> values = new ArrayList<>();
+                values.add(schema.schemaName);
+                values.add(ds.datasourceName);
+                values.add(schema.comment);
 
-        try {
-            String userName = null;
-            String objName = null;
-            String authName = null;
-
-            authName = revokeDdl.get(1);
-
-            if(revokeDdl.get(2).toLowerCase().equals("from")) {
-                userName = revokeDdl.get(3);
+                ts.add(new OctopusMockupTuple(values));
             }
-            else if(revokeDdl.get(2).toLowerCase().equals("on")) {
-                userName = revokeDdl.get(5);
-                objName = revokeDdl.get(3);
-            }
-
-            Revoke revoke = new Revoke(userName, objName, authName);
-            List<String> tuple = new ArrayList<String>();
-            tuple.add(revoke.user);
-            tuple.add(revoke.obj);
-            tuple.add(revoke.auth);
-            resultSet.addTuple(tuple);
-
-        }catch (NullPointerException e){
-            e.printStackTrace();
         }
+        Collections.sort(ts, new SchemaComparator());
 
-        return resultSet;
+        OctopusMockupResultSet rs = new OctopusMockupResultSet();
+        rs.addTuples(ts);
+        return rs;
     }
 
-    public OctopusMockupResultSet createUser(String ddl) {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
-        String ddlStmt = ddl;
-        List<String> addUser = parsingStmd(ddlStmt);
-
-        try {
-            User user = new User(addUser.get(2), addUser.get(4));
-            user_info = Arrays.asList(user);
-
-        }catch (NullPointerException e){
-            e.printStackTrace();
-        }
-
-        return resultSet;
-    }
-
-    List parsingStmd(String ddlstmt) {
-        List<String> stmt = new ArrayList<String>();
-        StringTokenizer st = new StringTokenizer(ddlstmt);
-        String grantUser;
-        boolean isToUser = false;
-
-        while(st.hasMoreTokens()) {
-            String temp = st.nextToken();
-            stmt.add(temp);
-        }
-
-        /*CASE 1. CREATE USER*/
-        if(stmt.get(0).toLowerCase().equals("create") && stmt.get(1).toLowerCase().equals("user") && stmt.get(3).toLowerCase().equals("password"))
-            return stmt;
-        /*CASE 2. GRANT */
-        else if(stmt.get(0).toLowerCase().equals("grant")) {
-            String auth = stmt.get(1).toLowerCase();
-            return stmt;
-        }
-        /*CASE 3. REVOKE */
-        else if(stmt.get(0).toLowerCase().equals("revoke"))
-            return stmt;
-        else
-            return null;
-    }
-
-    public OctopusMockupResultSet getPrivilege () {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
-
-        for(Grant grant : grant_info) {
-            List<String> tuple = new ArrayList<String>();
-            tuple.add(grant.privilege);
-            resultSet.addTuple(tuple);
-        }
-        return resultSet;
-    }
-    public OctopusMockupResultSet getUsers() {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
-
-        for(User user : user_info){
-            List<String> tuple = new ArrayList<String>();
-            tuple.add(user.name);
-            resultSet.addTuple(tuple);
-        }
-
-        return resultSet;
-    }
-
-    public OctopusMockupResultSet getCatalogs() {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
-
-        for(Datasource dataSource : meta_info){
-            List<String> tuple = new ArrayList<String>();
-            tuple.add(dataSource.datasource_name);
-            tuple.add(dataSource.comment);
-            resultSet.addTuple(tuple);
-        }
-
-        return resultSet;
-    }
-
-    public OctopusMockupResultSet getSchemas() {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
-
-        for(Datasource datasource : meta_info){
-            for(Schema schema : datasource.schemas) {
-                List<String> tuple = new ArrayList<String>();
-                tuple.add(datasource.datasource_name);
-                tuple.add(schema.schema_name);
-                tuple.add(schema.comment);
-                resultSet.addTuple(tuple);
+    @Override
+    public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException
+    {
+        Datasource ds = null;
+        for (Datasource tmp : metaInfo) {
+            if (tmp.datasourceName.equals(catalog)) {
+                ds = tmp;
+                break;
             }
         }
 
-        return resultSet;
-    }
+        if (ds == null)
+            return new OctopusMockupResultSet();
 
-    public OctopusMockupResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String type[]) {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
-        String regTableNamePattern = convertPattern(tableNamePattern);
-        String regSchemaNamePattern = convertPattern(schemaPattern);
-
-        for(Datasource datasource : meta_info) {
-            if(catalog != null && !catalog.equals(datasource.datasource_name))
+        List<OctopusMockupTuple> ts = new ArrayList<>();
+        final String pattern = convertPattern(schemaPattern);
+        for (Schema schema : ds.schemas) {
+            if (!schema.schemaName.matches(pattern))
                 continue;
 
-            String catalog_name = datasource.datasource_name;
+            List<String> values = new ArrayList<>();
+            values.add(schema.schemaName);
+            values.add(ds.datasourceName);
+            values.add(schema.comment);
 
-            for (Schema schema : datasource.schemas) {
-                if (regSchemaNamePattern != null && !schema.schema_name.matches(regSchemaNamePattern))
+            ts.add(new OctopusMockupTuple(values));
+        }
+        Collections.sort(ts, new SchemaComparator());
+
+        OctopusMockupResultSet rs = new OctopusMockupResultSet();
+        rs.addTuples(ts);
+        return rs;
+    }
+
+    private class TableComparator implements Comparator<OctopusMockupTuple>
+    {
+        @Override
+        public int compare(OctopusMockupTuple tl, OctopusMockupTuple tr)
+        {
+            int r = tl.get(0).compareTo(tr.get(0));
+            if (r != 0)
+                return r;
+            r = tl.get(1).compareTo(tr.get(1));
+            if (r != 0)
+                return r;
+            return tl.get(2).compareTo(tr.get(2));
+        }
+    }
+
+    @Override
+    public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException
+    {
+        Datasource ds = null;
+        for (Datasource tmp : metaInfo) {
+            if (tmp.datasourceName.equals(catalog)) {
+                ds = tmp;
+                break;
+            }
+        }
+
+        if (ds == null)
+            return new OctopusMockupResultSet();
+
+        List<OctopusMockupTuple> ts = new ArrayList<>();
+        final String sPattern = convertPattern(schemaPattern);
+        final String tPattern = convertPattern(tableNamePattern);
+        for (Schema schema : ds.schemas) {
+            if (!schema.schemaName.matches(sPattern))
+                continue;
+
+            for (Table table : schema.tables) {
+                if (!table.tableName.matches(tPattern))
                     continue;
 
-                String schema_name = schema.schema_name;
+                List<String> values = new ArrayList<>();
+                values.add(ds.datasourceName);
+                values.add(schema.schemaName);
+                values.add(table.tableName);
+                values.add(table.type);
+                values.add(table.comment);
 
-                for(Table table : schema.tables) {
-                    if(regTableNamePattern != null && !table.table_name.matches(regTableNamePattern))
+                ts.add(new OctopusMockupTuple(values));
+            }
+        }
+        Collections.sort(ts, new TableComparator());
+
+        OctopusMockupResultSet rs = new OctopusMockupResultSet();
+        rs.addTuples(ts);
+        return rs;
+    }
+
+    @Override
+    public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException
+    {
+        List<OctopusMockupTuple> ts = new ArrayList<>();
+        final String sPattern = convertPattern(schemaPattern);
+        final String tPattern = convertPattern(tableNamePattern);
+        for (Grant g : grantInfo) {
+            if (!g.datasourceName.equals(catalog))
+                continue;
+            if (!g.schemaName.matches(sPattern))
+                continue;
+            if (!g.tableName.matches(tPattern))
+                continue;
+
+            List<String> values = new ArrayList<>();
+            values.add(g.datasourceName);
+            values.add(g.schemaName);
+            values.add(g.tableName);
+            values.add(g.grantor);
+            values.add(g.grantee);
+            values.add(g.privilege);
+
+            ts.add(new OctopusMockupTuple(values));
+        }
+        Collections.sort(ts, new TableComparator());
+
+        OctopusMockupResultSet rs = new OctopusMockupResultSet();
+        rs.addTuples(ts);
+        return rs;
+    }
+
+    @Override
+    public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
+    {
+        Datasource ds = null;
+        for (Datasource tmp : metaInfo) {
+            if (tmp.datasourceName.equals(catalog)) {
+                ds = tmp;
+                break;
+            }
+        }
+
+        if (ds == null)
+            return new OctopusMockupResultSet();
+
+        List<OctopusMockupTuple> ts = new ArrayList<>();
+        final String sPattern = convertPattern(schemaPattern);
+        final String tPattern = convertPattern(tableNamePattern);
+        final String cPattern = convertPattern(columnNamePattern);
+        for (Schema schema : ds.schemas) {
+            if (!schema.schemaName.matches(sPattern))
+                continue;
+
+            for (Table table : schema.tables) {
+                if (!table.tableName.matches(tPattern))
+                    continue;
+
+                for (Column col : table.columns) {
+                    if (!col.columnName.matches(cPattern))
                         continue;
 
-                    String table_name = table.table_name;
+                    List<String> values = new ArrayList<>();
+                    values.add(ds.datasourceName);
+                    values.add(schema.schemaName);
+                    values.add(table.tableName);
+                    values.add(col.columnName);
+                    values.add(col.type);
+                    values.add(col.secuType);
+                    values.add(col.comment);
 
-                    resultSet.addTuple(Arrays.asList(catalog_name, schema_name, table_name, table.comment));
+                    ts.add(new OctopusMockupTuple(values));
                 }
             }
         }
+        Collections.sort(ts, new TableComparator());
 
-        return resultSet;
+        OctopusMockupResultSet rs = new OctopusMockupResultSet();
+        rs.addTuples(ts);
+        return rs;
     }
 
-    public OctopusMockupResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
-        String regTableNamePattern = convertPattern(tableNamePattern);
-        String regSchemaNamePattern = convertPattern(schemaPattern);
+    private String convertPattern(final String pattern)
+    {
+        final char SEARCH_STRING_ESCAPE = '\\';
 
-        OctopusMockupDatabaseMetaData dbmd = new OctopusMockupDatabaseMetaData();
-        OctopusMockupResultSet userList = dbmd.getUsers();
-
-        OctopusMockupResultSet privList = dbmd.getPrivilege();
-
-        for(Datasource datasource: meta_info) {
-            if (catalog != null && !catalog.equals(datasource.datasource_name))
-                continue;
-
-            String catalog_name = datasource.datasource_name;
-
-            for (Schema schema : datasource.schemas) {
-                if (regSchemaNamePattern != null && !schema.schema_name.matches(regSchemaNamePattern))
-                    continue;
-
-                String schema_pattern = schema.schema_name;
-
-                for(Table table : schema.tables) {
-                    if (regTableNamePattern != null && !table.table_name.matches(regTableNamePattern))
-                        continue;
-
-                    String table_pattern = table.table_name;
-                    resultSet.addTuple(Arrays.asList(catalog_name, schema_pattern, table_pattern, "octopus", userList.getString(1), privList.getString(1), privList.getString(2)));
-                }
-            }
-        }
-
-        return resultSet;
-    }
-
-    public OctopusMockupResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) {
-        OctopusMockupResultSet resultSet = new OctopusMockupResultSet();
-        String regTableNamePattern = convertPattern(tableNamePattern);
-        String regSchemaNamePattern = convertPattern(schemaPattern);
-        String regColumnNamePattern = convertPattern(columnNamePattern);
-
-        for(Datasource datasource: meta_info) {
-            if (catalog != null && !catalog.equals(datasource.datasource_name))
-                continue;
-
-            String catalog_name = datasource.datasource_name;
-
-            for (Schema schema : datasource.schemas) {
-                if (regSchemaNamePattern != null && !schema.schema_name.matches(regSchemaNamePattern))
-                    continue;
-
-                String schema_name = schema.schema_name;
-
-                for(Table table : schema.tables) {
-                    if (regTableNamePattern != null && !table.table_name.matches(regTableNamePattern))
-                        continue;
-
-                        String table_name = table.table_name;
-
-                        for (Column column : table.columns) {
-                            if (regColumnNamePattern != null && !column.column_name.matches(regColumnNamePattern))
-                                continue;
-
-                                resultSet.addTuple(Arrays.asList(catalog_name, schema_name, table_name, column.column_name, column.type, column.secu_type, column.comment));
-                            }
-                }
-            }
-        }
-
-        return resultSet;
-    }
-
-    private String convertPattern(final String pattern) {
-        if(pattern == null)
+        if (pattern == null) {
             return ".*";
-        else {
+        } else {
             StringBuilder result = new StringBuilder(pattern.length());
 
             boolean escaped = false;
-            for(int i = 0, len = pattern.length(); i < len; i++){
+            for (int i = 0; i < pattern.length(); i++) {
                 char c = pattern.charAt(i);
-                if(escaped) {
-                    if ( c != SEARCH_STRING_ESCAPE) {
+                if (escaped) {
+                    if (c != SEARCH_STRING_ESCAPE)
                         escaped = false;
-                    }
                     result.append(c);
                 } else {
-                    if (c == SEARCH_STRING_ESCAPE) {
+                    if (c == SEARCH_STRING_ESCAPE)
                         escaped = true;
-                        continue;
-                    } else if ( c == '%') {
+                    else if (c == '%')
                         result.append(".*");
-                    } else if ( c == '_') {
+                    else if (c == '_')
                         result.append('.');
-                    } else {
+                    else
                         result.append(c);
-                    }
                 }
             }
 

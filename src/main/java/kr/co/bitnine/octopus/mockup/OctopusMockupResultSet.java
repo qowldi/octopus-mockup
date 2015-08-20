@@ -1,56 +1,67 @@
 package kr.co.bitnine.octopus.mockup;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-public class OctopusMockupResultSet {
-    class Tuple extends ArrayList<String> {
-        public Tuple(List<String> values) { super(values);}
+class OctopusMockupResultSet extends AbstractResultSet
+{
+    private final List<OctopusMockupTuple> tuples;
+    private Iterator<OctopusMockupTuple> iter;
+    private OctopusMockupTuple cursor;
+    private boolean isClosed;
+
+    OctopusMockupResultSet()
+    {
+        tuples = new ArrayList<>();
+        iter = null;
+        cursor = null;
+        isClosed = false;
     }
 
-    protected int curRow;
-    protected long totalRow;
-    protected boolean wasNull;
-    protected Tuple cur;
-    List<Tuple> tuples;
-
-
-    public OctopusMockupResultSet(){
-        cur = null;
-        curRow = 0;
-        totalRow = 0;
-        wasNull = false;
-        tuples = new ArrayList<Tuple>();
+    void addTuple(OctopusMockupTuple t)
+    {
+        tuples.add(t);
     }
 
-    public void addTuple(List<String> values){
-        Tuple tuple = new Tuple(values);
-        tuples.add(tuple);
-        totalRow++;
+    void addTuples(List<OctopusMockupTuple> ts)
+    {
+        tuples.addAll(ts);
     }
 
-    public String getString(int i) {
-        String value = cur.get(i - 1);
-        return value;
-    }
+    @Override
+    public boolean next() throws SQLException
+    {
+        if (iter == null)
+             iter = tuples.iterator();
 
-    public boolean next() {
-        if (totalRow <= 0) {
+        if (iter.hasNext()) {
+            cursor = iter.next();
+            return true;
+        } else {
             return false;
         }
-
-        cur = nextTuple();
-        curRow++;
-        if (cur != null) {
-            return true;
-        }
-        return false;
     }
 
-    protected Tuple nextTuple() {
-        if(curRow >= totalRow) {
-            return null;
+    @Override
+    public void close() throws SQLException
+    {
+        isClosed = true;
+    }
+
+    @Override
+    public String getString(int i) throws SQLException
+    {
+        if (isClosed)
+            throw new SQLException("result set is already closed");
+        if (cursor == null)
+            throw new SQLException("cursor is not initialized");
+
+        try {
+            return cursor.get(i - 1);
+        } catch (IndexOutOfBoundsException e) {
+            throw new SQLException("column index is not valid");
         }
-        return tuples.get(curRow);
     }
 }
