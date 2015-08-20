@@ -98,9 +98,8 @@ public class MockupTest
 
              */
         System.out.println("== CREATE USER ==");
-        System.out.print("DDL 문을 입력하시오 : ");
-        Scanner scCreateUser = new Scanner(System.in);
-        String createUserStmt = scCreateUser.nextLine();
+        System.out.println("DDL : CREATE USER octopus PASSWORD octopus");
+        String createUserStmt = "CREATE USER octopus PASSWORD octopus";
         OctopusMockupResultSet addUsers1 = dbmd.createUser(createUserStmt);
 
         System.out.println("== User List ==");
@@ -109,19 +108,44 @@ public class MockupTest
             System.out.println("User name :" + users.getString(1));
         }
 
-            /* 6. Grant and Revoke
+            /* 6. Grant
 
              */
-        System.out.println("== GRANT and REVOKE ==");
-        System.out.print("DDL 문을 입력하시오 : ");
-        Scanner scGrant = new Scanner(System.in);
-        String grantStmt = scGrant.nextLine();
-        OctopusMockupResultSet grant = dbmd.grant(grantStmt);
+        System.out.println("== GRANT  ==");
+        String grantStmt1 = "GRANT SELECT ON datasource.schema.table TO user1";
+    //  String grantStmt2 = "GRANT SELECT ON schema TO octopus";
+    //  String grantStmt3 = "GRANT SELECT ON table TO octopus";
+    //  String grantStmt4 = "GRANT ROLE TO octopus";
 
+        dbmd.grantStmt(grantStmt1);
+        OctopusMockupResultSet grant = dbmd.getGrant();
+        while (grant.next()) {
+            System.out.println("1. grantee : " + grant.getString(1) + " 2. grantor : " + grant.getString(2) + " 3. privilege : " + grant.getString(3)
+            + " 4. table name : " + grant.getString(6));
+        }
 
-            /* 7. Check role
+            /* 7. REVOKE
 
              */
-        System.out.println("== Check role ==");
+        System.out.println("==  REVOKE  ==");
+        String revokeStmt1 = "REVOKE SELECT FROM octopus";
+     // String revokeStmt2 = "REVOKE SELECT ON datasource FROM octopus";
+
+        OctopusMockupResultSet revoke = dbmd.revokeStmt(revokeStmt1);
+        while(revoke.next()){
+            System.out.println("Revoke Username : " + revoke.getString(1) + " Revoke obj : " + revoke.getString(2)
+                    + " Revoke auth : " + revoke.getString(3));
+        }
+
+            /* 8. List of authority
+
+            */
+        System.out.println("== List of authority ==");
+        OctopusMockupResultSet authList = dbmd.getGrant();
+
+        while (authList.next()) {
+            System.out.println("1. grantee : " + authList.getString(1) + " 2. grantor = " + authList.getString(2) +" 3. privilege : " + authList.getString(3) + " 4. datasource : " + authList.getString(4)
+                    + " 5. schema : " + authList.getString(5) + " 6. table name : " + authList.getString(6));
+        }
     }
 }

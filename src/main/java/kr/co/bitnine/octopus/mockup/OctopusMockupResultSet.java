@@ -1,6 +1,5 @@
 package kr.co.bitnine.octopus.mockup;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,12 +29,12 @@ public class OctopusMockupResultSet {
         totalRow++;
     }
 
-    public String getString(int i) throws SQLException{
+    public String getString(int i) {
         String value = cur.get(i - 1);
         return value;
     }
 
-    public boolean next() throws SQLException {
+    public boolean next() {
         if (totalRow <= 0) {
             return false;
         }
