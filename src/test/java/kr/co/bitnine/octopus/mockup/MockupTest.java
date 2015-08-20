@@ -95,6 +95,7 @@ public class MockupTest
          */
         System.out.println("* CREATE USER");
         String sql = "CREATE USER jsyang IDENTIFIED BY '0009';";
+        System.out.println(sql);
         try {
             stmt.execute(sql);
         } catch (SQLException e) {
@@ -106,6 +107,7 @@ public class MockupTest
          */
         System.out.println("* GRANT");
         sql = "GRANT SELECT ON \"datasource1.schema1.table1\" TO jsyang;";
+        System.out.println(sql);
         try {
             stmt.execute(sql);
         } catch (SQLException e) {
@@ -113,14 +115,29 @@ public class MockupTest
         }
 
         /*
+         * List som privileges
+         */
+        System.out.println("* List some privileges");
+        rs = meta.getTablePrivileges("datasource1", null, null);
+        while (rs.next()) {
+            System.out.println("datasource=" + rs.getString(1) + ", schema=" + rs.getString(2) +
+                    ", table=" + rs.getString(3) + ", grantor=" + rs.getString(4) +
+                    ", grantee=" + rs.getString(5) + ", privilege=" + rs.getString(6));
+        }
+        rs.close();
+
+        /*
          * Revoke
          */
         System.out.println("* REVOKE");
         sql = "REVOKE SELECT ON \"datasource1.schema1.table1\" FROM jsyang";
+        System.out.println(sql);
         try {
             stmt.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        stmt.close();
     }
 }
